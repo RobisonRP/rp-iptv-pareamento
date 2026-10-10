@@ -22,6 +22,7 @@
     { label: 'Minhas listas', view: 'lists', title: 'Minhas listas' },
     { label: 'Favoritos', view: 'favorites', title: 'Favoritos' },
     { label: 'Histórico', view: 'history', title: 'Histórico' },
+    { label: 'Atualização', view: 'update', title: 'Atualização' },
     { label: 'Buscar', view: 'search', title: 'Buscar' }
   ];
 
@@ -68,7 +69,8 @@
     playContext: '',
     overlayOpen: false,
     overlayIndex: 0,
-    modal: null
+    modal: null,
+    update: { remote: null, remoteInfo: null, checking: false, msg: '' }
   };
 
   var hls = null;
@@ -191,7 +193,10 @@
     $('section').textContent = S.title;
     var rows = [];
     var src;
-    if (S.view === 'lists') {
+    if (S.view === 'update') {
+      src = updateItems();
+      src.forEach(function (i) { rows.push(i.label); });
+    } else if (S.view === 'lists') {
       src = S.lists;
       rows.push('+ Adicionar pelo celular (QR code)');
       rows.push('Digitar a URL no controle');
@@ -207,6 +212,8 @@
 
     if (S.loading) {
       $('status').textContent = S.progressMsg;
+    } else if (S.view === 'update') {
+      $('status').textContent = S.update.msg || 'Escolha uma opção.';
     } else if (!S.lists.length && S.view !== 'lists') {
       $('status').textContent = 'Nenhuma lista cadastrada. Vá em "Minhas listas" e pressione VERDE para adicionar sua lista M3U.';
     } else if (S.statusMsg) {
@@ -236,11 +243,12 @@
     S.title = m.title;
     S.listIndex = 0;
     // Em "Minhas listas" o foco vai direto para a lista, para o VERDE e o OK já funcionarem.
-    if (m.view === 'lists') S.zone = 'list';
+    if (m.view === 'lists' || m.view === 'update') S.zone = 'list';
     render();
   }
 
   function selectFocused() {
+    if (S.view === 'update') { runUpdateItem(S.listIndex); return; }
     if (S.view === 'lists') {
       if (S.listIndex === 0) openPairing();
       else if (S.listIndex === 1) openAddList();
@@ -747,6 +755,106 @@
     endPairing('Pareamento cancelado.');
   }
 
+  // --------------------------------------------------------------- atualização ---
+
+  var UPDATE_BASE = 'https://robisonrp.github.io/rp-iptv-pareamento/app/';
+
+  function installedVersion() {
+    return String(window.RP_BOOT_TAG || '').replace(/^(v|local:)/, '');
+  }
+
+  function cmpVersion(a, b) {
+    var x = String(a).split('.').map(Number), y = String(b).split('.').map(Number);
+    for (var i = 0; i < Math.max(x.length, y.length); i++) {
+      var d = (x[i] || 0) - (y[i] || 0);
+      if (d) return d;
+    }
+    return 0;
+  }
+
+  function autoUpdateOn() {
+    try { return localStorage.getItem('rp.autoUpdate') !== 'false'; } catch (e) { return true; }
+  }
+
+  function updateItems() {
+    var items = [{ label: 'Versão instalada: ' + installedVersion(), action: 'info' }];
+    if (S.update.remote) items.push({ label: 'Nova versão disponível: ' + S.update.remote, action: 'info' });
+    items.push({ label: S.update.checking ? 'Verificando...' : 'Verificar atualização agora', action: 'check' });
+    if (S.update.remote) items.push({ label: 'Instalar a versão ' + S.update.remote, action: 'install' });
+    items.push({ label: 'Atualização automática: ' + (autoUpdateOn() ? 'SIM' : 'NÃO'), action: 'toggle' });
+    return items;
+  }
+
+  function checkUpdate() {
+    if (S.update.checking) return;
+    S.update.checking = true;
+    S.update.msg = 'Verificando...';
+    render();
+    fetch(UPDATE_BASE + 'version.json?t=' + Date.now(), { cache: 'no-store' })
+      .then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return r.json(); })
+      .then(function (remoto) {
+        S.update.checking = false;
+        if (remoto && remoto.version && cmpVersion(remoto.version, installedVersion()) > 0) {
+          S.update.remote = remoto.version;
+          S.update.remoteInfo = remoto;
+          S.update.msg = 'Nova versão encontrada. Escolha "Instalar" para baixar.';
+        } else {
+          S.update.remote = null;
+          S.update.remoteInfo = null;
+          S.update.msg = 'Você já está na versão mais recente.';
+        }
+        render();
+      })
+      .catch(function () {
+        S.update.checking = false;
+        S.update.msg = 'Não foi possível verificar. Confira a conexão com a internet.';
+        render();
+      });
+  }
+
+  function installUpdate() {
+    var info = S.update.remoteInfo;
+    if (!info) { S.update.msg = 'Verifique a atualização primeiro.'; render(); return; }
+    S.update.msg = 'Baixando a versão ' + info.version + '...';
+    render();
+    var base = info.base || UPDATE_BASE;
+    var files = {};
+    Promise.all(info.files.map(function (f) {
+      return fetch(base + f.path, { cache: 'no-store' }).then(function (r) {
+        if (!r.ok) throw new Error(f.path);
+        return r.text();
+      }).then(function (t) { files[f.path] = t; });
+    })).then(function () {
+      if (typeof files['index.html'] !== 'string' || typeof files['js/app.js'] !== 'string' ||
+          typeof files['css/app.css'] !== 'string') {
+        throw new Error('pacote incompleto');
+      }
+      save('rp.bundle', { version: info.version, base: base, files: files });
+      try { localStorage.removeItem('rp.badVersion'); } catch (e) { /* ignora */ }
+      S.update.remote = null;
+      S.update.remoteInfo = null;
+      S.update.msg = 'Versão ' + info.version + ' instalada. Feche e abra o app para usar.';
+      render();
+    }).catch(function () {
+      S.update.msg = 'Falha ao baixar a atualização. Tente de novo.';
+      render();
+    });
+  }
+
+  function toggleAutoUpdate() {
+    try { localStorage.setItem('rp.autoUpdate', autoUpdateOn() ? 'false' : 'true'); } catch (e) { /* ignora */ }
+    S.update.msg = 'Atualização automática ' + (autoUpdateOn() ? 'ligada.' : 'desligada.');
+    render();
+  }
+
+  function runUpdateItem(idx) {
+    var item = S.viewSource[idx];
+    if (!item) return;
+    if (item.action === 'check') checkUpdate();
+    else if (item.action === 'install') installUpdate();
+    else if (item.action === 'toggle') toggleAutoUpdate();
+  }
+
   // ---------------------------------------------------------------- teclado ---
 
   function handleBrowse(k) {
@@ -767,7 +875,7 @@
     if (k === KEY.LEFT || k === KEY.BACK || k === KEY.ESC) { S.zone = 'menu'; render(); return true; }
     if (k === KEY.ENTER) { selectFocused(); return true; }
     if (k === KEY.PLAY) { if (S.view !== 'lists') play(S.viewSource, S.listIndex); return true; }
-    if (k === KEY.YELLOW) { if (S.view !== 'lists') toggleFavorite(); return true; }
+    if (k === KEY.YELLOW) { if (S.view !== 'lists' && S.view !== 'update') toggleFavorite(); return true; }
     if (k === KEY.RED) { if (S.view === 'lists') removeList(); return true; }
     if (k === KEY.GREEN) { if (S.view === 'lists') openPairing(); return true; }
     if (k === KEY.BLUE) { openSearch(); return true; }

@@ -6,7 +6,7 @@
 (function () {
   'use strict';
 
-  var LOCAL_VERSION = '0.9.0';   // deve ser igual ao "version" do appinfo.json
+  var LOCAL_VERSION = '0.10.0';   // deve ser igual ao "version" do appinfo.json
   var BASE = 'https://robisonrp.github.io/rp-iptv-pareamento/app/';
   var K_BUNDLE = 'rp.bundle';    // versão baixada: {version, base, files:{caminho: texto}}
   var K_BOOTING = 'rp.booting';  // etiqueta da última abertura
@@ -117,6 +117,7 @@
 
   function checkForUpdate() {
     if (!window.fetch) return;
+    if (getItem('rp.autoUpdate') === 'false') return;   // usuário desligou a atualização automática
     var atual = bundle ? bundle.version : LOCAL_VERSION;
     fetch(BASE + 'version.json?t=' + Date.now(), { cache: 'no-store' })
       .then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return r.json(); })
