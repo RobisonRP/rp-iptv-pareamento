@@ -1,10 +1,10 @@
 {
-  "version": "0.9.0",
+  "version": "0.9.1",
   "base": "https://robisonrp.github.io/rp-iptv-pareamento/app/",
   "files": [
     {
       "path": "appinfo.json",
-      "sha256": "fe61a7e2e3a479dc75dde8e9009915149dc4fe954e6807c220c1c76e4f7f4ebe"
+      "sha256": "f62c583d8d02d9c106f205f6812d6b732d78a14202813ef707f9b6c9e607fdd7"
     },
     {
       "path": "css/app.css",
@@ -20,7 +20,7 @@
     },
     {
       "path": "js/app.js",
-      "sha256": "e6378a994c57013a5c0867c5c6b66ef0b768b73999b89be7d4c50463a2df55c8"
+      "sha256": "c1bbeb497ee647ecb8ad2d135983a85a97845d3a9e0bae40011b7b8d1af4f9e3"
     },
     {
       "path": "js/boot.js",

@@ -1,6 +1,6 @@
 {
     "id": "com.rpiptv.app",
-    "version": "0.9.0",
+    "version": "0.9.1",
     "vendor": "RP",
     "type": "web",
     "main": "index.html",
