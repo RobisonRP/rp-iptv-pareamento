@@ -832,6 +832,13 @@
     refreshCatalog();
   }
 
+  // Mostra a versão no cabeçalho (ex.: "RP IPTV  v0.9.1"). A etiqueta vem do carregador.
+  var brandEl = document.querySelector('.brand');
+  if (brandEl) {
+    var versaoMostrada = String(window.RP_BOOT_TAG || '').replace(/^(v|local:)/, '');
+    brandEl.textContent = 'RP IPTV  v' + versaoMostrada;
+  }
+
   init();
 
   // Registra que esta versão abriu bem. O carregador usa isso para detectar uma versão baixada que trava.
