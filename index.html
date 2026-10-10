@@ -2,122 +2,68 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex">
-<title>RP IPTV — Enviar lista para a TV</title>
-<style>
-  * { box-sizing: border-box; }
-  body { margin: 0; min-height: 100vh; background: #0B1020; color: #fff; font-family: system-ui, Arial, sans-serif; display: flex; align-items: center; justify-content: center; padding: 20px; }
-  .card { width: 100%; max-width: 480px; background: #111A30; border-radius: 16px; padding: 28px; }
-  h1 { font-size: 22px; margin: 0 0 6px; }
-  p { color: #9EACC8; line-height: 1.45; margin: 8px 0 16px; }
-  label { display: block; font-size: 14px; color: #CBD5E8; margin-bottom: 6px; }
-  input { width: 100%; font-size: 17px; padding: 14px; border-radius: 10px; border: 1px solid #2a3a5c; background: #0B1020; color: #fff; }
-  input:focus { outline: 2px solid #42D6CF; }
-  .codigo { font-size: 26px; letter-spacing: 4px; font-weight: bold; color: #42D6CF; text-transform: uppercase; }
-  button { width: 100%; margin-top: 14px; font-size: 18px; padding: 14px; border: none; border-radius: 10px; background: #42D6CF; color: #0B1020; font-weight: bold; cursor: pointer; }
-  button:disabled { opacity: .5; cursor: default; }
-  #msg { margin-top: 16px; font-size: 16px; min-height: 22px; }
-  .ok { color: #7CFFB2; }
-  .erro { color: #FF8A8A; }
-  .aviso { font-size: 13px; color: #7183A7; margin-top: 18px; }
-  .hidden { display: none; }
-</style>
+<meta name="viewport" content="width=1920">
+<title>RP IPTV</title>
+<link rel="stylesheet" href="css/app.css">
 </head>
 <body>
-<div class="card">
-  <h1>Enviar lista para a TV</h1>
-  <p>Cole abaixo o endereço (URL) da sua lista M3U. A lista vai direto para a TV.</p>
-
-  <div id="semCodigo" class="hidden">
-    <label for="codigoManual">Código mostrado na TV (6 letras e números)</label>
-    <input id="codigoManual" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false">
+  <div id="browse">
+    <header>
+      <div class="brand">RP IPTV</div>
+      <div class="sub">Canais abertos  •  Filmes  •  Séries  •  Infantil  •  Gratuitos e públicos</div>
+    </header>
+    <aside>
+      <div class="menu-title">MENU</div>
+      <ul id="menu"></ul>
+    </aside>
+    <main>
+      <h1 id="section">Canais abertos</h1>
+      <div id="status"></div>
+      <ul id="list"></ul>
+    </main>
+    <footer id="hint"></footer>
   </div>
 
-  <div id="comCodigo" class="hidden">
-    <label>Código da TV</label>
-    <div class="codigo" id="codigoTexto"></div>
+  <div id="player" class="hidden">
+    <video id="video" autoplay></video>
+    <div id="overlay" class="hidden">
+      <div class="ov-title">Canais</div>
+      <ul id="overlayList"></ul>
+    </div>
+    <div id="banner" class="hidden">
+      <img id="bannerLogo" alt="">
+      <div>
+        <div id="bannerName"></div>
+        <div id="bannerInfo"></div>
+      </div>
+    </div>
   </div>
 
-  <label for="url" style="margin-top:16px">Endereço da lista (começa com http:// ou https://)</label>
-  <input id="url" type="url" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="url">
+  <div id="modal" class="hidden">
+    <div class="box">
+      <h2 id="modalTitle"></h2>
+      <p id="modalText"></p>
+      <input id="modalInput" type="text" class="hidden">
+      <div id="modalButtons"></div>
+    </div>
+  </div>
 
-  <button id="enviar">Enviar para a TV</button>
-  <div id="msg"></div>
-
-  <p class="aviso">Não guardamos a lista nem mostramos o endereço depois de enviado. O código expira em 10 minutos e funciona uma única vez.</p>
-</div>
-
-<script src="config.js"></script>
-<script>
-(function () {
-  var CODIGO_RE = /^[A-Z2-9]{6}$/;
-  var codigo = (new URLSearchParams(location.search).get('c') || '').toUpperCase();
-
-  var el = {
-    semCodigo: document.getElementById('semCodigo'),
-    comCodigo: document.getElementById('comCodigo'),
-    codigoTexto: document.getElementById('codigoTexto'),
-    codigoManual: document.getElementById('codigoManual'),
-    url: document.getElementById('url'),
-    enviar: document.getElementById('enviar'),
-    msg: document.getElementById('msg')
-  };
-
-  if (CODIGO_RE.test(codigo)) {
-    el.comCodigo.classList.remove('hidden');
-    el.codigoTexto.textContent = codigo;
-  } else {
-    el.semCodigo.classList.remove('hidden');
-  }
-
-  function mostrar(texto, tipo) {
-    el.msg.textContent = texto;
-    el.msg.className = tipo || '';
-  }
-
-  function validaUrl(v) {
-    return /^https?:\/\/\S+$/i.test(v) && v.length <= 2000;
-  }
-
-  el.enviar.addEventListener('click', function () {
-    var cod = codigo || (el.codigoManual.value || '').trim().toUpperCase();
-    var url = (el.url.value || '').trim();
-    if (!CODIGO_RE.test(cod)) { mostrar('Digite o código de 6 caracteres mostrado na TV.', 'erro'); return; }
-    if (!validaUrl(url)) { mostrar('Endereço inválido. Ele deve começar com http:// ou https://', 'erro'); return; }
-
-    el.enviar.disabled = true;
-    mostrar('Enviando...', '');
-    fetch(CONFIG.SUPABASE_URL + '/rest/v1/rpc/enviar_url', {
-      method: 'POST',
-      headers: {
-        'apikey': CONFIG.SUPABASE_KEY,
-        'Authorization': 'Bearer ' + CONFIG.SUPABASE_KEY,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ p_codigo: cod, p_url: url })
-    })
-      .then(function (r) {
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        return r.json();
-      })
-      .then(function (resultado) {
-        el.url.value = '';           // limpa o campo: a URL não fica na tela
-        el.codigoManual.value = '';
-        if (resultado === 'ok') {
-          mostrar('Lista enviada! Volte para a TV, ela vai adicionar sozinha.', 'ok');
-        } else if (resultado === 'url_invalida') {
-          mostrar('Endereço inválido. Confira e tente de novo.', 'erro');
-        } else {
-          mostrar('Código inválido, expirado ou já usado. Gere outro código na TV.', 'erro');
-        }
-      })
-      .catch(function () {
-        mostrar('Não foi possível enviar. Verifique sua conexão e tente de novo.', 'erro');
-      })
-      .then(function () { el.enviar.disabled = false; });
-  });
-})();
-</script>
+  <div id="pairing" class="hidden">
+    <div class="box pair">
+      <h2>Adicionar lista pelo celular</h2>
+      <div class="pair-row">
+        <div id="qr"></div>
+        <div class="pair-info">
+          <p>Aponte a câmera do celular para o QR code.</p>
+          <p>Na página que abrir, cole o endereço da lista.</p>
+          <p>Ou acesse <span id="pairUrl"></span> e digite o código:</p>
+          <div id="pairCode" class="codigo"></div>
+          <p id="pairStatus"></p>
+          <p class="pair-aviso">BACK cancela.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="js/boot.js"></script>
 </body>
 </html>

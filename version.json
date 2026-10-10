@@ -1,0 +1,50 @@
+{
+  "version": "0.9.1",
+  "base": "https://robisonrp.github.io/rp-iptv-pareamento/app/",
+  "files": [
+    {
+      "path": "appinfo.json",
+      "sha256": "f62c583d8d02d9c106f205f6812d6b732d78a14202813ef707f9b6c9e607fdd7"
+    },
+    {
+      "path": "css/app.css",
+      "sha256": "98c921430d5b7c5c392f339b88ef17c03d117402958892c675616619cd516271"
+    },
+    {
+      "path": "icon.png",
+      "sha256": "e4f09367929dc8dd92aa2e8891fdcdfbefea62c734babee9ebce9dfaa6dbb79c"
+    },
+    {
+      "path": "index.html",
+      "sha256": "5e23ea68512f7a537a23edc66a237b03bd9a43cd041e16b076482c8983d068bf"
+    },
+    {
+      "path": "js/app.js",
+      "sha256": "c1bbeb497ee647ecb8ad2d135983a85a97845d3a9e0bae40011b7b8d1af4f9e3"
+    },
+    {
+      "path": "js/boot.js",
+      "sha256": "7057cfa3b27f497b133422388d4b7a44e8692207a404f15d7437aef1a6742546"
+    },
+    {
+      "path": "js/config.js",
+      "sha256": "1bc63b992213a9c2c6c0e7fffaf5259f3ad65ab78d0e2c4a82b632b223c0a61e"
+    },
+    {
+      "path": "js/parsers.js",
+      "sha256": "1b417a1c9b5a75cbaee3f1bc9be6f7c7eee08046918eca2ad7cee36d735d061c"
+    },
+    {
+      "path": "largeIcon.png",
+      "sha256": "be0c60d104ada38b4ab34a32c98a5dc152591307ffbdb7364ffa430075d60d18"
+    },
+    {
+      "path": "vendor/hls.min.js",
+      "sha256": "484054e8cd03d3f6d1781fb7f402bdc318d8a4c527f933a95c624e27cc9a9470"
+    },
+    {
+      "path": "vendor/qrcode.js",
+      "sha256": "18ae399f81182bc9de916e9c77b195df20cc58d6f2d55a62b085a299f1bf1780"
+    }
+  ]
+}
