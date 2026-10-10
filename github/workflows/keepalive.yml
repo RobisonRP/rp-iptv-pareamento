@@ -1,0 +1,26 @@
+name: Keepalive Supabase
+
+on:
+  schedule:
+    - cron: "0 12 */3 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Chamar a função de pareamento
+        env:
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          set -e
+          resposta=$(curl -sS -X POST "https://akviutqvsburyjzdjhon.supabase.co/rest/v1/rpc/retirar_url" \
+            -H "apikey: $SUPABASE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{"p_codigo":"ping-0"}')
+          echo "Resposta: $resposta"
+          echo "$resposta" | grep -q '"status":"expirado"'
